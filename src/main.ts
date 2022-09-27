@@ -1,11 +1,22 @@
 import { Vector3 } from '@babylonjs/core'
 import { SixAxisViewer } from './6-axis-viewer'
+import { parseIMUData } from './imu'
+import { WSData } from './ws-data'
 
+
+const wsData = new WSData('ws://localhost:26214')
 const RESET_KEY = 'KeyR'
 
 const sixAxisViewer = new SixAxisViewer('#renderCanvas')
 const main = document.querySelector('#main')!
-const lockedTips = document.querySelector('#locked-tips')
+const lockedTips = document.querySelector('#locked-tips')!
+const tips = document.querySelector('#tips')!
+
+
+wsData.onChange = (data) => {
+    sixAxisViewer.update(data[0])
+    tips.textContent = JSON.stringify(data[0], null, 2)
+}
 
 let locking = false
 let lastEventTime = 0

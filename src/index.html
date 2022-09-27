@@ -14,9 +14,13 @@
             height: 100%;
             margin: 0;
             padding: 0;
+        }
+
+        #main {
             display: flex;
             align-items: center;
             justify-content: center;
+            flex-direction: column;
         }
 
         #main #locked-tips {
@@ -27,7 +31,7 @@
             display: block
         }
 
-        #main.locked #tips {
+        #main.locked #click-tips {
             display: none
         }
 
@@ -38,13 +42,18 @@
             width: 600px;
             height: 400px;
         }
+
+        #tips {
+            width: 400px;
+        }
     </style>
 </head>
 
 <body>
     <div id="main">
-        <div id="tips">Click to start</div>
+        <pre id="click-tips">Click to start</pre>
         <pre id="locked-tips">Hello world</pre>
+        <pre id="tips"></div>
         <canvas id="renderCanvas"></canvas>
     </div>
     <script type="module" src="main.ts"></script>

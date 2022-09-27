@@ -1,11 +1,12 @@
 import { Engine, Scene, ArcRotateCamera, Vector3, HemisphericLight, MeshBuilder, StandardMaterial, TransformNode, CreateCylinder, Color3 } from "@babylonjs/core"
 import { GridMaterial } from '@babylonjs/materials'
+import { vector3, IMUData } from "./imu"
 
 export class SixAxisViewer {
     canvas: HTMLCanvasElement
     engine: Engine
     scene: Scene
-    arrow: TransformNode
+    acc: TransformNode
 
     constructor(canvasSelector: string) {
         const canvas = document.querySelector(canvasSelector) as HTMLCanvasElement
@@ -17,8 +18,11 @@ export class SixAxisViewer {
 
         const greenColoredMaterial = new StandardMaterial("", scene);
         greenColoredMaterial.disableLighting = true;
-        greenColoredMaterial.emissiveColor = Color3.Green().scale(0.5);
-        this.arrow = SixAxisViewer.createArrow(scene, greenColoredMaterial, 1)
+        greenColoredMaterial.emissiveColor = Color3.Green().scale(0.9);
+        this.acc = SixAxisViewer.createArrow(scene, greenColoredMaterial, 1)
+        this.acc.position = new Vector3(0, 0, 0)
+        this.acc.setDirection(new Vector3(0, 1, 0))
+        this.acc.scaling.setAll(30)
 
         // Register a render loop to repeatedly render the scene
         engine.runRenderLoop(function () {
@@ -39,14 +43,12 @@ export class SixAxisViewer {
         const scene = new Scene(this.engine)
         // Creates and positions a free camera
         const camera = new ArcRotateCamera("camera1",
-            Math.PI / 2, Math.PI / 4, 3,
-            new Vector3(0, 5, -10), scene)
-        // Targets the camera to scene origin
-        camera.setTarget(Vector3.Zero())
+            Math.PI / 2, Math.PI / 4, 100,
+            Vector3.Zero(), scene)
         // This attaches the camera to the canvas
         camera.attachControl(this.canvas, true)
         camera.lowerRadiusLimit = 2
-        camera.upperRadiusLimit = 10
+        camera.upperRadiusLimit = 200
         camera.wheelDeltaPercentage = 0.01
         // Creates a light, aiming 0,1,0 - to the sky
         const light = new HemisphericLight("light",
@@ -55,12 +57,7 @@ export class SixAxisViewer {
         light.intensity = 0.7
         // Built-in 'sphere' shape.
         const sphere = MeshBuilder.CreateSphere("sphere",
-            { diameter: 2, segments: 32 }, scene)
-        // Move the sphere upward 1/2 its height
-        sphere.position.y = 1
-        // Built-in 'ground' shape.
-        // const ground = MeshBuilder.CreateGround("ground",
-        //     { width: 6, height: 6     }, scene)
+            { diameter: 1, segments: 32 }, scene)
 
         // Ground for positional reference
         const ground = MeshBuilder.CreateGround("ground", { width: 250, height: 250 })
@@ -70,6 +67,9 @@ export class SixAxisViewer {
         ground.material = gridMaterial
 
         return scene
+    }
+    update(data: IMUData) {
+        this.acc.setDirection(vector3(data.acc))
     }
     static createArrow(scene: Scene, material: StandardMaterial, thickness: number = 1, isCollider = false): TransformNode {
         const arrow = new TransformNode("arrow", scene);
