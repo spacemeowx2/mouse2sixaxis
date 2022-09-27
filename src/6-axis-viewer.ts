@@ -1,12 +1,13 @@
-import { Engine, Scene, ArcRotateCamera, Vector3, HemisphericLight, MeshBuilder, StandardMaterial, TransformNode, CreateCylinder, Color3 } from "@babylonjs/core"
+import { Engine, Scene, ArcRotateCamera, Vector3, HemisphericLight, MeshBuilder, StandardMaterial, TransformNode, CreateCylinder, Color3, SceneLoader, Mesh, DynamicTexture, AxesViewer } from "@babylonjs/core"
 import { GridMaterial } from '@babylonjs/materials'
-import { vector3, IMUData } from "./imu"
+import { vector3, IMUData, direction3 } from "./imu"
 
 export class SixAxisViewer {
     canvas: HTMLCanvasElement
     engine: Engine
     scene: Scene
     acc: TransformNode
+    box: Mesh
 
     constructor(canvasSelector: string) {
         const canvas = document.querySelector(canvasSelector) as HTMLCanvasElement
@@ -24,6 +25,10 @@ export class SixAxisViewer {
         this.acc.setDirection(new Vector3(0, 1, 0))
         this.acc.scaling.setAll(30)
 
+        const box = MeshBuilder.CreateBox('box', { width: 30, height: 30, depth: 15 }, scene)
+        box.position.x = 30
+        this.box = box
+
         // Register a render loop to repeatedly render the scene
         engine.runRenderLoop(function () {
             scene.render()
@@ -38,12 +43,14 @@ export class SixAxisViewer {
         this.engine = engine
         this.scene = scene
     }
+    async load() {
+    }
     createScene() {
         // Creates a basic Babylon Scene object
         const scene = new Scene(this.engine)
         // Creates and positions a free camera
         const camera = new ArcRotateCamera("camera1",
-            Math.PI / 2, Math.PI / 4, 100,
+            0, Math.PI / 4, 100,
             Vector3.Zero(), scene)
         // This attaches the camera to the canvas
         camera.attachControl(this.canvas, true)
@@ -66,10 +73,14 @@ export class SixAxisViewer {
         gridMaterial.opacity = 0.7
         ground.material = gridMaterial
 
+        new AxesViewer(scene, 10);
+
         return scene
     }
     update(data: IMUData) {
-        this.acc.setDirection(vector3(data.acc))
+        const vec = vector3(data.acc)
+        this.acc.setDirection(vec)
+        this.box.setDirection(direction3(vec))
     }
     static createArrow(scene: Scene, material: StandardMaterial, thickness: number = 1, isCollider = false): TransformNode {
         const arrow = new TransformNode("arrow", scene);

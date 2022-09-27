@@ -13,13 +13,16 @@ const lockedTips = document.querySelector('#locked-tips')!
 const tips = document.querySelector('#tips')!
 const connectBtn = document.querySelector('#connect')!
 
+hidData.onChange = (data) => {
+    sixAxisViewer.update(data[0])
+    tips.textContent = JSON.stringify(data[0], null, 2)
+}
+
 async function main() {
+    await sixAxisViewer.load()
+    hidData.restore()
     connectBtn.addEventListener('click', async () => {
         await hidData.connect()
-        hidData.onChange = (data) => {
-            sixAxisViewer.update(data[0])
-            tips.textContent = JSON.stringify(data[0], null, 2)
-        }
     })
 
     let locking = false

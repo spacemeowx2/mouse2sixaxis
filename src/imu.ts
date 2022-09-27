@@ -12,10 +12,19 @@ export type IMUData = {
 
 export const vector3 = (vec: Vector): Vector3 => {
     return new Vector3(
-        -vec.y,
+        vec.x,
         vec.z,
-        -vec.x,
+        -vec.y,
     )
+}
+
+export const direction3 = (vec: Vector): Vector3 => {
+    const v = new Vector3(
+        vec.x,
+        vec.z,
+        -vec.y,
+    )
+    return v
 }
 
 export const parseIMUData = (data: Uint8Array): IMUData[] => {

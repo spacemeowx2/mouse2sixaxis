@@ -20,7 +20,8 @@
   },
   "homepage": "https://github.com/spacemeowx2/mouse2sixaxis#readme",
   "devDependencies": {
-    "parcel": "^2.7.0"
+    "parcel": "^2.7.0",
+    "parcel-reporter-static-files-copy": "^1.4.0"
   },
   "dependencies": {
     "@babylonjs/core": "^5.25.0",
