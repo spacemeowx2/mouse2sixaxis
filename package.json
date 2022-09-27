@@ -1,0 +1,30 @@
+{
+  "name": "mouse2sixaxis",
+  "source": "src/index.html",
+  "version": "1.0.0",
+  "description": "WIP",
+  "main": "main.js",
+  "scripts": {
+    "start": "parcel",
+    "build": "parcel build",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/spacemeowx2/mouse2sixaxis.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/spacemeowx2/mouse2sixaxis/issues"
+  },
+  "homepage": "https://github.com/spacemeowx2/mouse2sixaxis#readme",
+  "devDependencies": {
+    "parcel": "^2.7.0"
+  },
+  "dependencies": {
+    "@babylonjs/core": "^5.25.0",
+    "@babylonjs/loaders": "^5.25.0",
+    "@babylonjs/materials": "^5.25.0"
+  }
+}

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
     <title>Mouse to 6-axis</title>
@@ -9,26 +9,34 @@
         html,
         body,
         #main {
+            background: #ddd;
             width: 100%;
             height: 100%;
             margin: 0;
             padding: 0;
-
             display: flex;
             align-items: center;
             justify-content: center;
         }
 
         #main #locked-tips {
-            display: none;
+            display: none
         }
 
         #main.locked #locked-tips {
-            display: block;
+            display: block
         }
 
         #main.locked #tips {
-            display: none;
+            display: none
+        }
+
+        #renderCanvas {
+            position: absolute;
+            right: 0;
+            bottom: 0;
+            width: 600px;
+            height: 400px;
         }
     </style>
 </head>
@@ -37,8 +45,9 @@
     <div id="main">
         <div id="tips">Click to start</div>
         <pre id="locked-tips">Hello world</pre>
+        <canvas id="renderCanvas"></canvas>
     </div>
-    <script src="main.js"></script>
+    <script type="module" src="main.ts"></script>
 </body>
 
 </html>
