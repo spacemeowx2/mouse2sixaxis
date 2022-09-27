@@ -1,4 +1,4 @@
-import { Engine, Scene, ArcRotateCamera, Vector3, HemisphericLight, MeshBuilder, StandardMaterial, TransformNode, CreateCylinder, Color3, SceneLoader, Mesh, DynamicTexture, AxesViewer } from "@babylonjs/core"
+import { Engine, Scene, ArcRotateCamera, Vector3, HemisphericLight, MeshBuilder, StandardMaterial, TransformNode, CreateCylinder, Color3, SceneLoader, Mesh, DynamicTexture, AxesViewer, Space, Axis } from "@babylonjs/core"
 import { GridMaterial } from '@babylonjs/materials'
 import { vector3, IMUData, direction3 } from "./imu"
 
@@ -78,9 +78,14 @@ export class SixAxisViewer {
         return scene
     }
     update(data: IMUData) {
-        const vec = vector3(data.acc)
-        this.acc.setDirection(vec)
-        this.box.setDirection(direction3(vec))
+        const acc = vector3(data.acc)
+        const gyro = vector3(data.gyro)
+        this.acc.setDirection(acc)
+        // this.box.setDirection(direction3(acc), Math.PI / 2)
+        const SAMPLE_RATE = 100
+        this.box.rotate(Axis.X, Math.PI * gyro.x / SAMPLE_RATE, Space.LOCAL)
+        this.box.rotate(Axis.Y, Math.PI * gyro.y / SAMPLE_RATE, Space.LOCAL)
+        this.box.rotate(Axis.Z, Math.PI * gyro.z / SAMPLE_RATE, Space.LOCAL)
     }
     static createArrow(scene: Scene, material: StandardMaterial, thickness: number = 1, isCollider = false): TransformNode {
         const arrow = new TransformNode("arrow", scene);

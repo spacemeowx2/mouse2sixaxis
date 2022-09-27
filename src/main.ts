@@ -1,10 +1,10 @@
-import { Vector3 } from '@babylonjs/core'
 import { SixAxisViewer } from './6-axis-viewer'
-import { parseIMUData } from './imu'
 import { HIDData } from './hid-data'
+import { MouseData } from './mouse-data'
 
 
 const hidData = new HIDData()
+const mousueData = new MouseData()
 const RESET_KEY = 'KeyR'
 
 const sixAxisViewer = new SixAxisViewer('#renderCanvas')
@@ -12,9 +12,10 @@ const mainDiv = document.querySelector('#main')!
 const lockedTips = document.querySelector('#locked-tips')!
 const tips = document.querySelector('#tips')!
 const connectBtn = document.querySelector('#connect')!
-
 hidData.onChange = (data) => {
-    sixAxisViewer.update(data[0])
+    for (const i of data) {
+        sixAxisViewer.update(i)
+    }
     tips.textContent = JSON.stringify(data[0], null, 2)
 }
 
@@ -59,9 +60,7 @@ async function main() {
             lowestDelta = delta
         }
 
-        for (const i of mouseEvent) {
-            console.log(i.timeStamp)
-        }
+        mousueData.input(mouseEvent)
         mouseEvent = []
 
         lastEventTime = now

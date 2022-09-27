@@ -18,7 +18,7 @@ class JoyconDevice {
         })
     }
     async writeOutputReport(command: number, subcommand: number, argument: number) {
-        this.device.sendReport(command, new Uint8Array([
+        await this.device.sendReport(command, new Uint8Array([
             this.packetNumber,
             ...this.rumbleData,
             subcommand,
@@ -28,12 +28,12 @@ class JoyconDevice {
     }
     async setupSensors() {
         // Enable 6 axis sensors
-        this.writeOutputReport(0x01, 0x40, 0x01)
+        await this.writeOutputReport(0x01, 0x40, 0x01)
 
         await sleep(50)
 
         // Change format of input report
-        this.writeOutputReport(0x01, 0x03, 0x30)
+        await this.writeOutputReport(0x01, 0x03, 0x30)
     }
 }
 

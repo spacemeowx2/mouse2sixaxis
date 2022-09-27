@@ -13,16 +13,16 @@ export type IMUData = {
 export const vector3 = (vec: Vector): Vector3 => {
     return new Vector3(
         vec.x,
-        vec.z,
-        -vec.y,
+        -vec.z,
+        vec.y,
     )
 }
 
 export const direction3 = (vec: Vector): Vector3 => {
     const v = new Vector3(
         vec.x,
-        vec.z,
-        -vec.y,
+        -vec.z,
+        vec.y,
     )
     return v
 }
