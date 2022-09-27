@@ -1,83 +1,91 @@
 import { Vector3 } from '@babylonjs/core'
 import { SixAxisViewer } from './6-axis-viewer'
 import { parseIMUData } from './imu'
-import { WSData } from './ws-data'
+import { HIDData } from './hid-data'
 
 
-const wsData = new WSData('ws://localhost:26214')
+const hidData = new HIDData()
 const RESET_KEY = 'KeyR'
 
 const sixAxisViewer = new SixAxisViewer('#renderCanvas')
-const main = document.querySelector('#main')!
+const mainDiv = document.querySelector('#main')!
 const lockedTips = document.querySelector('#locked-tips')!
 const tips = document.querySelector('#tips')!
+const connectBtn = document.querySelector('#connect')!
 
+async function main() {
+    connectBtn.addEventListener('click', async () => {
+        await hidData.connect()
+        hidData.onChange = (data) => {
+            sixAxisViewer.update(data[0])
+            tips.textContent = JSON.stringify(data[0], null, 2)
+        }
+    })
 
-wsData.onChange = (data) => {
-    sixAxisViewer.update(data[0])
-    tips.textContent = JSON.stringify(data[0], null, 2)
-}
+    let locking = false
+    let lastEventTime = 0
+    let lowestDelta = Infinity
+    let mouseEvent: MouseEvent[] = []
 
-let locking = false
-let lastEventTime = 0
-let lowestDelta = Infinity
-let mouseEvent: MouseEvent[] = []
+    mainDiv.addEventListener('mousemove', (e) => {
+        if (!locking) {
+            return
+        }
 
-main.addEventListener('mousemove', (e) => {
-    if (!locking) {
-        return
-    }
+        mouseEvent.push(e as MouseEvent)
+    })
+    document.addEventListener('keypress', (e) => {
+        if (!locking) {
+            return
+        }
+        if (e.code === RESET_KEY) {
+            console.log('Reset the 6-axis data')
+        }
+    })
 
-    mouseEvent.push(e as MouseEvent)
-})
-document.addEventListener('keypress', (e) => {
-    if (!locking) {
-        return
-    }
-    if (e.code === RESET_KEY) {
-        console.log('Reset the 6-axis data')
-    }
-})
+    const raf = () => {
+        requestAnimationFrame(raf)
+        const now = performance.now()
+        if (lastEventTime === 0) {
+            lastEventTime = now
+            return
+        }
 
-const raf = () => {
-    requestAnimationFrame(raf)
-    const now = performance.now()
-    if (lastEventTime === 0) {
+        const delta = now - lastEventTime
+        if (delta < lowestDelta) {
+            lowestDelta = delta
+        }
+
+        for (const i of mouseEvent) {
+            console.log(i.timeStamp)
+        }
+        mouseEvent = []
+
         lastEventTime = now
-        return
     }
 
-    const delta = now - lastEventTime
-    if (delta < lowestDelta) {
-        lowestDelta = delta
-    }
+    requestAnimationFrame(raf)
 
-    for (const i of mouseEvent) {
-        console.log(i.timeStamp)
+    const setLocked = (locked: boolean) => {
+        locking = locked
+        if (locked) {
+            console.log('Pointer locked')
+            mainDiv.classList.add('locked')
+        } else {
+            console.log('Pointer unlocked')
+            mainDiv.classList.remove('locked')
+        }
     }
-    mouseEvent = []
+    mainDiv.addEventListener('click', (e) => {
+        if (e.target !== mainDiv) {
+            return
+        }
+        mainDiv.requestPointerLock()
+    })
+    document.addEventListener('pointerlockchange', () => {
+        setLocked(document.pointerLockElement === mainDiv)
+    })
 
-    lastEventTime = now
 }
 
-requestAnimationFrame(raf)
-
-const setLocked = (locked: boolean) => {
-    locking = locked
-    if (locked) {
-        console.log('Pointer locked')
-        main.classList.add('locked')
-    } else {
-        console.log('Pointer unlocked')
-        main.classList.remove('locked')
-    }
-}
-main.addEventListener('click', (e) => {
-    if (e.target !== main) {
-        return
-    }
-    main.requestPointerLock()
-})
-document.addEventListener('pointerlockchange', () => {
-    setLocked(document.pointerLockElement === main)
-})
+main()

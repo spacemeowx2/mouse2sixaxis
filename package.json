@@ -25,6 +25,7 @@
   "dependencies": {
     "@babylonjs/core": "^5.25.0",
     "@babylonjs/loaders": "^5.25.0",
-    "@babylonjs/materials": "^5.25.0"
+    "@babylonjs/materials": "^5.25.0",
+    "@types/w3c-web-hid": "^1.0.3"
   }
 }
