@@ -1,10 +1,8 @@
 import { SixAxisViewer } from './6-axis-viewer'
 import { HIDData } from './hid-data'
-import { MouseData } from './mouse-data'
-
+import { Gamepad } from './gamepad'
 
 const hidData = new HIDData()
-const mousueData = new MouseData()
 const RESET_KEY = 'KeyR'
 
 const sixAxisViewer = new SixAxisViewer('#renderCanvas')
@@ -12,6 +10,8 @@ const mainDiv = document.querySelector('#main')!
 const lockedTips = document.querySelector('#locked-tips')!
 const tips = document.querySelector('#tips')!
 const connectBtn = document.querySelector('#connect')!
+const gp = new Gamepad()
+const ws = new WebSocket('ws://localhost:26214')
 hidData.onChange = (data) => {
     for (const i of data) {
         sixAxisViewer.update(i)
@@ -60,8 +60,12 @@ async function main() {
             lowestDelta = delta
         }
 
-        mousueData.input(mouseEvent)
+        gp.onMouseMove(mouseEvent)
         mouseEvent = []
+
+        const report = gp.getReport()
+        // console.log(report)
+        ws.send(JSON.stringify(report))
 
         lastEventTime = now
     }
@@ -86,6 +90,27 @@ async function main() {
     })
     document.addEventListener('pointerlockchange', () => {
         setLocked(document.pointerLockElement === mainDiv)
+    })
+
+    document.addEventListener('keydown', ({ keyCode }) => {
+        if (locking) {
+            gp.onKeyDown(keyCode)
+        }
+    }, false)
+    document.addEventListener('keyup', ({ keyCode }) => {
+        if (locking) {
+            gp.onKeyUp(keyCode)
+        }
+    })
+    document.addEventListener('mousedown', ({ button }) => {
+        if (locking) {
+            gp.onMouseDown(button)
+        }
+    }, false)
+    document.addEventListener('mouseup', ({ button }) => {
+        if (locking) {
+            gp.onMouseUp(button)
+        }
     })
 
 }

@@ -1,13 +1,14 @@
-from multiprocessing import Lock, Manager, Process
+# from multiprocessing import Lock, Manager, Process
 import logging
 import time
 import statistics as stat
 from random import randint
 from nxbt.controller import ControllerTypes, ControllerServer
-from nxbt.controller.utils import format_msg_switch, format_msg_controller
+from nxbt.controller.utils import format_msg_switch, format_msg_controller, replace_subarray
 from nxbt.bluez import toggle_clean_bluez, find_devices_by_alias
 from websocket_server import WebsocketServer
-from json import dumps
+from json import loads, dumps
+from threading import Thread, Lock
 
 
 def random_colour():
@@ -27,7 +28,7 @@ class ProController(ControllerServer):
                          colour_body=colour_body, colour_buttons=colour_buttons, lock=Lock())
 
         # set empty state
-        self.state['report'] = self.protocol.report
+        self.state['report'] = dumps(self.protocol.report)
 
         print('Empty report:', self.protocol.report)
 
@@ -50,10 +51,29 @@ class ProController(ControllerServer):
             if self.state["direct_input"]:
                 self.input.set_controller_input(self.state["direct_input"])
 
-            self.protocol.report = self.state['report']
+            report = loads(self.state['report'])
+            # self.protocol.report = report
+            self.protocol.button_status[0] = report[4]
+            self.protocol.button_status[1] = report[5]
+            self.protocol.button_status[2] = report[6]
+            self.protocol.left_stick_centre[0] = report[7]
+            self.protocol.left_stick_centre[1] = report[8]
+            self.protocol.left_stick_centre[2] = report[9]
+            self.protocol.right_stick_centre[0] = report[10]
+            self.protocol.right_stick_centre[1] = report[11]
+            self.protocol.right_stick_centre[2] = report[12]
+
             self.protocol.process_commands(reply)
 
+            if reply is None:
+                # replace imu data with report data
+                self.protocol.report[14:50] = report[14:50]
+
+            report = bytes(self.protocol.report)
+
             msg = self.protocol.get_report()
+
+            # print(bytes.hex(msg), len(msg))
 
             if self.logger_level <= logging.DEBUG and reply and len(reply) > 45:
                 self.logger.debug(format_msg_controller(msg))
@@ -98,10 +118,10 @@ class ProController(ControllerServer):
 if __name__ == "__main__":
     # logging.basicConfig(level=logging.NOTSET)
 
-    resource_manager = Manager()
+    # resource_manager = Manager()
     reconnect_address = find_devices_by_alias("Nintendo Switch")
 
-    controller_state = resource_manager.dict()
+    controller_state = {}
     controller_state["state"] = "initializing"
     controller_state["finished_macros"] = []
     controller_state["errors"] = None
@@ -112,7 +132,7 @@ if __name__ == "__main__":
 
     controller = ProController(state=controller_state)
     # controller.run(reconnect_address)
-    controller_process = Process(
+    controller_process = Thread(
         target=controller.run, args=(reconnect_address,))
     controller_process.daemon = True
     controller_process.start()
@@ -128,8 +148,7 @@ if __name__ == "__main__":
     print("Connected")
 
     def recv_message(client, server, message):
-        report = dumps(message)
-        controller.state['report'] = report
+        controller.state['report'] = message
 
     server = WebsocketServer(host='127.0.0.1', port=0x6666)
     server.set_fn_message_received(recv_message)
