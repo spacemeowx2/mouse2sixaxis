@@ -150,7 +150,6 @@ class SixAxis {
             z: 0
         },
     }
-    randomRange = 0.0001
     update() {
         const cur = packIMUData(this.imuData, 0)
 
@@ -301,8 +300,6 @@ export class Gamepad {
             ...this.rs.toBytes(),
             0x00,
             ...this.sixAxis.toBytes(),
-            // 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            // 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
         ]
 
         // const bytes = [
