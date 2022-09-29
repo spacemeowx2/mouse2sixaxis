@@ -7,7 +7,7 @@ from nxbt.controller import ControllerTypes, ControllerServer
 from nxbt.controller.utils import format_msg_switch, format_msg_controller, replace_subarray
 from nxbt.bluez import toggle_clean_bluez, find_devices_by_alias
 from websocket_server import WebsocketServer
-from json import loads, dumps
+from json import loads
 from threading import Thread, Lock
 
 
@@ -28,9 +28,7 @@ class ProController(ControllerServer):
                          colour_body=colour_body, colour_buttons=colour_buttons, lock=Lock())
 
         # set empty state
-        self.state['report'] = dumps(self.protocol.report)
-
-        print('Empty report:', self.protocol.report)
+        self.state['report'].append(self.protocol.report)
 
     def _on_exit(self):
         toggle_clean_bluez(False)
@@ -51,7 +49,20 @@ class ProController(ControllerServer):
             if self.state["direct_input"]:
                 self.input.set_controller_input(self.state["direct_input"])
 
-            report = loads(self.state['report'])
+            report = None
+            try:
+                if len(self.state['report']) == 1:
+                    time.sleep(1/100)
+                    if len(self.state['report']) == 1:
+                        report = self.state['report'][0]
+                        print('warning: use old report')
+                    else:
+                        report = self.state['report'].pop(0)
+                else:
+                    report = self.state['report'].pop(0)
+            except IndexError:
+                continue
+
             # self.protocol.report = report
             self.protocol.button_status[0] = report[4]
             self.protocol.button_status[1] = report[5]
@@ -65,15 +76,15 @@ class ProController(ControllerServer):
 
             self.protocol.process_commands(reply)
 
-            if reply is None:
+            if reply is None or (len(reply) > 2 and reply[1] == 0x10):
                 # replace imu data with report data
                 self.protocol.report[14:50] = report[14:50]
-
-            report = bytes(self.protocol.report)
+            else:
+                print("switch", bytes.hex(reply))
 
             msg = self.protocol.get_report()
 
-            # print(bytes.hex(msg), len(msg))
+            # print(bytes.hex(msg))
 
             if self.logger_level <= logging.DEBUG and reply and len(reply) > 45:
                 self.logger.debug(format_msg_controller(msg))
@@ -101,7 +112,7 @@ class ProController(ControllerServer):
             duration_start = duration_end
 
             sleep_time = 1/132 - duration_elapsed
-            if sleep_time >= 0:
+            if sleep_time >= 0 and len(self.state['report']) <= 1:
                 time.sleep(sleep_time)
             self.tick += 1
 
@@ -126,7 +137,7 @@ if __name__ == "__main__":
     controller_state["finished_macros"] = []
     controller_state["errors"] = None
     controller_state["direct_input"] = None
-    controller_state["report"] = None
+    controller_state["report"] = []
 
     print("Trying to reconnect to", reconnect_address)
 
@@ -148,7 +159,8 @@ if __name__ == "__main__":
     print("Connected")
 
     def recv_message(client, server, message):
-        controller.state['report'] = message
+        report = loads(message)
+        controller.state['report'].append(report)
 
     server = WebsocketServer(host='127.0.0.1', port=0x6666)
     server.set_fn_message_received(recv_message)

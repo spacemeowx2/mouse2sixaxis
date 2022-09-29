@@ -5,6 +5,7 @@ import { Gamepad } from './gamepad'
 const hidData = new HIDData()
 const RESET_KEY = 'KeyR'
 
+const PROXY_MODE = true
 const sixAxisViewer = new SixAxisViewer('#renderCanvas')
 const mainDiv = document.querySelector('#main')!
 const lockedTips = document.querySelector('#locked-tips')!
@@ -12,7 +13,13 @@ const tips = document.querySelector('#tips')!
 const connectBtn = document.querySelector('#connect')!
 const gp = new Gamepad()
 const ws = new WebSocket('ws://localhost:26214')
-hidData.onChange = (data) => {
+if (PROXY_MODE) {
+    hidData.onChange = (data) => {
+        const report = [0xa1, 0x30, ...data]
+        ws.send(JSON.stringify(report))
+    }
+}
+hidData.onIMUChange = (data) => {
     for (const i of data) {
         sixAxisViewer.update(i)
     }
@@ -65,7 +72,9 @@ async function main() {
 
         const report = gp.getReport()
         // console.log(report)
-        ws.send(JSON.stringify(report))
+        if (!PROXY_MODE) {
+            ws.send(JSON.stringify(report))
+        }
 
         lastEventTime = now
     }

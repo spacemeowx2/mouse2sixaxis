@@ -38,9 +38,9 @@ class JoyconDevice {
 }
 
 export class HIDData {
-    onChange?: (data: IMUData[]) => void = () => { }
-    constructor() {
-    }
+    onChange: (data: Uint8Array) => void = () => { }
+    onIMUChange: (data: IMUData[]) => void = () => { }
+
     async restore() {
         const devices = await navigator.hid.getDevices()
         if (devices.length === 0) {
@@ -53,8 +53,9 @@ export class HIDData {
         await jcDevice.setupSensors()
 
         jcDevice.onReport = (data) => {
-            const imuRawData = new Uint8Array(data.buffer)
-            this.onChange?.(parseIMUData(imuRawData.slice(12, 12 + 12 * 3)))
+            const reportData = new Uint8Array(data.buffer)
+            this.onChange(reportData.slice(0, 48))
+            this.onIMUChange(parseIMUData(reportData.slice(12, 12 + 12 * 3)))
         }
     }
     async connect() {
@@ -84,7 +85,7 @@ export class HIDData {
 
         jcDevice.onReport = (data) => {
             const imuRawData = new Uint8Array(data.buffer)
-            this.onChange?.(parseIMUData(imuRawData.slice(12, 12 + 12 * 3)))
+            this.onIMUChange?.(parseIMUData(imuRawData.slice(12, 12 + 12 * 3)))
         }
     }
 }
