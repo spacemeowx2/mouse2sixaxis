@@ -9,6 +9,7 @@ from nxbt.bluez import toggle_clean_bluez, find_devices_by_alias
 from websocket_server import WebsocketServer
 from json import loads
 from threading import Thread, Lock
+from queue import Queue
 
 
 def random_colour():
@@ -22,13 +23,12 @@ def random_colour():
 class ProController(ControllerServer):
 
     def __init__(self, adapter_path="/org/bluez/hci0", state=None, colour_body=None,
-                 colour_buttons=None):
+                 colour_buttons=None, report_queue=None):
         toggle_clean_bluez(True)
         super().__init__(ControllerTypes.PRO_CONTROLLER, adapter_path=adapter_path, state=state,
                          colour_body=colour_body, colour_buttons=colour_buttons, lock=Lock())
 
-        # set empty state
-        self.state['report'].append(self.protocol.report)
+        self.report_queue = report_queue
 
     def _on_exit(self):
         toggle_clean_bluez(False)
@@ -45,23 +45,7 @@ class ProController(ControllerServer):
             except BlockingIOError:
                 reply = None
 
-            # Set Direct Input
-            if self.state["direct_input"]:
-                self.input.set_controller_input(self.state["direct_input"])
-
-            report = None
-            try:
-                if len(self.state['report']) == 1:
-                    time.sleep(1/100)
-                    if len(self.state['report']) == 1:
-                        report = self.state['report'][0]
-                        print('warning: use old report')
-                    else:
-                        report = self.state['report'].pop(0)
-                else:
-                    report = self.state['report'].pop(0)
-            except IndexError:
-                continue
+            report = self.report_queue.get()
 
             # self.protocol.report = report
             self.protocol.button_status[0] = report[4]
@@ -112,7 +96,7 @@ class ProController(ControllerServer):
             duration_start = duration_end
 
             sleep_time = 1/132 - duration_elapsed
-            if sleep_time >= 0 and len(self.state['report']) <= 1:
+            if self.report_queue.empty() and sleep_time > 0:
                 time.sleep(sleep_time)
             self.tick += 1
 
@@ -129,7 +113,6 @@ class ProController(ControllerServer):
 if __name__ == "__main__":
     # logging.basicConfig(level=logging.NOTSET)
 
-    # resource_manager = Manager()
     reconnect_address = find_devices_by_alias("Nintendo Switch")
 
     controller_state = {}
@@ -137,11 +120,12 @@ if __name__ == "__main__":
     controller_state["finished_macros"] = []
     controller_state["errors"] = None
     controller_state["direct_input"] = None
-    controller_state["report"] = []
+
+    report_queue = Queue()
 
     print("Trying to reconnect to", reconnect_address)
 
-    controller = ProController(state=controller_state)
+    controller = ProController(state=controller_state, report_queue=report_queue)
     # controller.run(reconnect_address)
     controller_process = Thread(
         target=controller.run, args=(reconnect_address,))
@@ -159,8 +143,12 @@ if __name__ == "__main__":
     print("Connected")
 
     def recv_message(client, server, message):
+        if controller.state['state'] == "crashed":
+            raise OSError("The watched controller has crashe with error",
+                          controller.state['errors'])
         report = loads(message)
-        controller.state['report'].append(report)
+
+        report_queue.put(report)
 
     server = WebsocketServer(host='127.0.0.1', port=0x6666)
     server.set_fn_message_received(recv_message)

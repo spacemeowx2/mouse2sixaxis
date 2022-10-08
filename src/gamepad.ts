@@ -1,4 +1,4 @@
-import { IMUData, packIMUData } from "./imu"
+import { IMUData, packIMUData, vectorSub } from "./imu"
 
 type Calibration = {
     center_x: number;
@@ -81,33 +81,49 @@ class AnalogStick {
         return data
     }
 }
+
+// Mouse : X+ X- Y+ Y-
+// Gyro  : Z- Z+ Y+ Y-
+const DEFAULT_IMU: IMUData = {
+    acc: {
+        x: 0,
+        y: 0,
+        z: 1,
+    },
+    gyro: {
+        x: 0,
+        y: 0,
+        z: 0,
+    },
+}
+const MOUSE_GYRO_SCALE = 0.001
 class MouseSixAxis {
     rX = 0
     rY = 0
     lt = performance.now()
     ds = []
+    sensitivity: number = 1
+    constructor(public sixAxis: SixAxis) { }
     onMove(x: number, y: number) {
         this.rX += x
         this.rY += y
-        const MAX = 800
-        if (this.rX > MAX) {
-            this.rX = MAX
-        } else if (this.rX < -MAX) {
-            this.rX = -MAX
-        }
-        if (this.rY > MAX) {
-            this.rY = MAX
-        } else if (this.rY < -MAX) {
-            this.rY = -MAX
-        }
     }
-    onSend() {
-        const A = 25
-        const x = this.rX * A
-        const y = this.rY * A
-        this.rX = this.rY = 0
+    update() {
+        const imu = DEFAULT_IMU
+
+        imu.gyro.z = MOUSE_GYRO_SCALE * -this.rX * this.sensitivity
+        imu.gyro.y = MOUSE_GYRO_SCALE * this.rY * this.sensitivity
+
+        this.rX = 0
+        this.rY = 0
+
+        this.sixAxis.imuData = imu
+        this.sixAxis.update()
+        this.sixAxis.update()
+        this.sixAxis.update()
     }
 }
+
 class PadButton {
     btns: (0 | 1)[]
     constructor() {
@@ -171,7 +187,7 @@ export class Gamepad {
     ls = new AnalogStick(LEFT_STICK_CALIBRATION)
     rs = new AnalogStick(RIGHT_STICK_CALIBRATION)
     sixAxis = new SixAxis()
-    ms = new MouseSixAxis()
+    ms = new MouseSixAxis(this.sixAxis)
     btnMap = new Map([
         [73, 15], // ijkl, dpad
         [75, 14],
@@ -280,19 +296,10 @@ export class Gamepad {
     }
     onMove(x: number, y: number) {
         this.ms.onMove(x, y)
-        this.rX += x
-        this.rY += y
-    }
-    mouseToBytes() {
-        const x = this.rX * 20
-        const y = this.rY * 20
-        const ary = new Int16Array([x, y])
-
-        this.rX = this.rY = 0
-        return [...new Uint8Array(ary.buffer)]
     }
     getReport() {
-        this.sixAxis.update()
+        this.ms.update()
+        // this.sixAxis.update()
         const bytes = [
             0xA1, 0x30, 0, 0x90,
             ...this.button.toBytes(),

@@ -5,7 +5,7 @@ import { Gamepad } from './gamepad'
 const hidData = new HIDData()
 const RESET_KEY = 'KeyR'
 
-const PROXY_MODE = true
+const PROXY_MODE = false
 const sixAxisViewer = new SixAxisViewer('#renderCanvas')
 const mainDiv = document.querySelector('#main')!
 const lockedTips = document.querySelector('#locked-tips')!

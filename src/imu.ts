@@ -10,6 +10,20 @@ export type IMUData = {
     gyro: Vector
 }
 
+export const vectorAdd = (a: Vector, b: Vector): Vector => ({
+    x: a.x + b.x,
+    y: a.y + b.y,
+    z: a.z + b.z,
+})
+
+export const vectorSub = (a: Vector, b: Vector): Vector => ({
+    x: a.x - b.x,
+    y: a.y - b.y,
+    z: a.z - b.z,
+})
+
+export const VECTOR_ZERO: Vector = { x: 0, y: 0, z: 0 }
+
 export const vector3 = (vec: Vector): Vector3 => {
     return new Vector3(
         vec.x,
