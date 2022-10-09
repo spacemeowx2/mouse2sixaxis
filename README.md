@@ -42,3 +42,11 @@ The default keymap is:
 | P    | Capture |
 | Left Mouse Button     | ZR |
 | Right Mouse Button    | ZL |
+
+
+## Related projects
+
+- [Brikwerk's nxbt](https://github.com/Brikwerk/nxbt)
+- [dekuNukem's Nintendo_Switch_Reverse_Engineering](https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering)
+- [RemoteSwitchController](https://github.com/spacemeowx2/RemoteSwitchController)
+- [switch-pro-xy](https://github.com/spacemeowx2/switch-pro-xy)
