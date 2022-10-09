@@ -77,6 +77,9 @@ export class SixAxisViewer {
 
         return scene
     }
+    reset() {
+        this.box.setDirection(new Vector3(0, 0, 1))
+    }
     update(data: IMUData) {
         const acc = vector3(data.acc)
         const gyro = vector3(data.gyro)

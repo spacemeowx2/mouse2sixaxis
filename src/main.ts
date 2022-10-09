@@ -3,7 +3,7 @@ import { HIDData } from './hid-data'
 import { Gamepad } from './gamepad'
 
 const hidData = new HIDData()
-const RESET_KEY = 'KeyR'
+const RESET_KEY = 'KeyY'
 
 const PROXY_MODE = false
 const sixAxisViewer = new SixAxisViewer('#renderCanvas')
@@ -50,6 +50,8 @@ async function main() {
             return
         }
         if (e.code === RESET_KEY) {
+            gp.reset()
+            sixAxisViewer.reset()
             console.log('Reset the 6-axis data')
         }
     })
@@ -71,8 +73,11 @@ async function main() {
         mouseEvent = []
 
         const report = gp.getReport()
+        sixAxisViewer.update(gp.ms.sixAxis.imuData)
+        sixAxisViewer.update(gp.ms.sixAxis.imuData)
+        sixAxisViewer.update(gp.ms.sixAxis.imuData)
         // console.log(report)
-        if (!PROXY_MODE) {
+        if (!PROXY_MODE && ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify(report))
         }
 

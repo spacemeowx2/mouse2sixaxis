@@ -96,13 +96,20 @@ const DEFAULT_IMU: IMUData = {
         z: 0,
     },
 }
+// Pixel to Revolution/Second
 const MOUSE_GYRO_SCALE = 0.001
+// Pixel to radians
+const MOUSE_RADIANS = 0.00015
+
+const clamp = (v: number, _min: number = -1, _max: number = 1) => (Math.max(Math.min(_max, v), _min))
+const clampDirection = (v: number) => clamp(v, Math.PI * -0.5, Math.PI * 0.5)
+
 class MouseSixAxis {
     rX = 0
     rY = 0
-    lt = performance.now()
-    ds = []
-    sensitivity: number = 1
+    sensitivity = 1
+    direction = 0
+
     constructor(public sixAxis: SixAxis) { }
     onMove(x: number, y: number) {
         this.rX += x
@@ -111,6 +118,11 @@ class MouseSixAxis {
     update() {
         const imu = DEFAULT_IMU
 
+        this.direction += MOUSE_RADIANS * -this.rY * this.sensitivity
+        this.direction = clampDirection(this.direction)
+
+        imu.acc.x = Math.sin(this.direction)
+        imu.acc.z = Math.cos(this.direction)
         imu.gyro.z = MOUSE_GYRO_SCALE * -this.rX * this.sensitivity
         imu.gyro.y = MOUSE_GYRO_SCALE * this.rY * this.sensitivity
 
@@ -118,9 +130,12 @@ class MouseSixAxis {
         this.rY = 0
 
         this.sixAxis.imuData = imu
-        this.sixAxis.update()
-        this.sixAxis.update()
-        this.sixAxis.update()
+        this.sixAxis.update(3)
+    }
+    reset() {
+        this.direction = 0
+        this.sixAxis.imuData = DEFAULT_IMU
+        this.sixAxis.update(3)
     }
 }
 
@@ -166,13 +181,15 @@ class SixAxis {
             z: 0
         },
     }
-    update() {
-        const cur = packIMUData(this.imuData, 0)
+    update(times = 1) {
+        for (let i = 0; i < times; i++) {
+            const cur = packIMUData(this.imuData, 0)
 
-        const { data } = this
-        data[2] = data[1]
-        data[1] = data[0]
-        data[0] = cur
+            const { data } = this
+            data[2] = data[1]
+            data[1] = data[0]
+            data[0] = cur
+        }
     }
     toBytes() {
         const { data } = this
@@ -182,7 +199,6 @@ class SixAxis {
 }
 
 export class Gamepad {
-    seqId = 0
     button = new PadButton()
     ls = new AnalogStick(LEFT_STICK_CALIBRATION)
     rs = new AnalogStick(RIGHT_STICK_CALIBRATION)
@@ -317,5 +333,8 @@ export class Gamepad {
         //     ...this.mouseToBytes()
         // ]
         return bytes
+    }
+    reset() {
+        this.ms.reset()
     }
 }
