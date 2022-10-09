@@ -99,7 +99,7 @@ const DEFAULT_IMU: IMUData = {
 // Pixel to Revolution/Second
 const MOUSE_GYRO_SCALE = 0.001
 // Pixel to radians
-const MOUSE_RADIANS = 0.00015
+const MOUSE_RADIANS = 0.0002
 
 const clamp = (v: number, _min: number = -1, _max: number = 1) => (Math.max(Math.min(_max, v), _min))
 const clampDirection = (v: number) => clamp(v, Math.PI * -0.5, Math.PI * 0.5)
@@ -117,17 +117,19 @@ class MouseSixAxis {
     }
     update() {
         const imu = DEFAULT_IMU
+        const dX = this.rX
+        const dY = this.rY
 
-        this.direction += MOUSE_RADIANS * -this.rY * this.sensitivity
+        this.direction += MOUSE_RADIANS * -dY * this.sensitivity
         this.direction = clampDirection(this.direction)
 
         imu.acc.x = Math.sin(this.direction)
         imu.acc.z = Math.cos(this.direction)
-        imu.gyro.z = MOUSE_GYRO_SCALE * -this.rX * this.sensitivity
-        imu.gyro.y = MOUSE_GYRO_SCALE * this.rY * this.sensitivity
+        imu.gyro.z = MOUSE_GYRO_SCALE * -dX * this.sensitivity
+        imu.gyro.y = MOUSE_GYRO_SCALE * dY * this.sensitivity
 
-        this.rX = 0
-        this.rY = 0
+        this.rX -= dX
+        this.rY -= dY
 
         this.sixAxis.imuData = imu
         this.sixAxis.update(3)
@@ -227,7 +229,7 @@ export class Gamepad {
     ])
     mouseBtnMap = new Map([
         [0, 7],    // ZR
-        [2, 21]     // ZL
+        [2, 21]    // ZL
     ])
     fakeLSMap = new Map([
         [87, [0, 1]],
